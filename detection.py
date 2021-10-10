@@ -1,37 +1,20 @@
-######## Webcam Object Detection Using Tensorflow-trained Classifier #########
-#
-# Author: Evan Juras
-# Date: 10/27/19
-# Description:
-# This program uses a TensorFlow Lite model to perform object detection on a live webcam
-# feed. It draws boxes and scores around the objects of interest in each frame from the
-# webcam. To improve FPS, the webcam object runs in a separate thread from the main program.
-# This script will work with either a Picamera or regular USB webcam.
-#
-# This code is based off the TensorFlow Lite image classification example at:
-# https://github.com/tensorflow/tensorflow/blob/master/tensorflow/lite/examples/python/label_image.py
-#
-# I added my own method of drawing boxes and labels using OpenCV.
-
 # Import packages
+from tflite_runtime.interpreter import Interpreter
 import time
 from threading import Thread
 
 import cv2
 import numpy as np
 
-#try:
+# try:
 #    import robot
-#except ImportError:
+# except ImportError:
 #    print("robot function not found!")
 #    exit()
 
-# Define VideoStream class to handle streaming of video from webcam in separate processing thread
-# Source - Adrian Rosebrock, PyImageSearch: https://www.pyimagesearch.com/2015/12/28/increasing-raspberry-pi-fps-with-python-and-opencv/
-
 
 class VideoStream:
-    """Camera object that controls video streaming from the Picamera"""
+    # Camera object that controls video streaming from the Picamera
 
     def __init__(self, resolution=(640, 480), framerate=30):
         # Initialize the PiCamera and the camera image stream
@@ -78,11 +61,6 @@ class VideoStream:
 min_conf_threshold = 0.5
 imW, imH = 1360, 768
 
-# Import TensorFlow libraries
-# If tflite_runtime is installed, import interpreter from tflite_runtime, else import from regular tensorflow
-# If using Coral Edge TPU, import the load_delegate library
-from tflite_runtime.interpreter import Interpreter
-
 # Load the label map
 with open("./labelmap.txt", 'r') as f:
     labels = [line.strip() for line in f.readlines()]
@@ -121,7 +99,7 @@ time.sleep(1)
 while True:
 
     # Start timer (for calculating frame rate)
-    #t1 = cv2.getTickCount()
+    t1 = cv2.getTickCount()
 
     # Grab frame from video stream
     frame1 = videostream.read()
@@ -140,32 +118,21 @@ while True:
     interpreter.set_tensor(input_details[0]['index'], input_data)
     interpreter.invoke()
 
-    # Retrieve detection results
-    # Bounding box coordinates of detected objects
-    boxes = interpreter.get_tensor(output_details[0]['index'])[0]
-    classes = interpreter.get_tensor(output_details[1]['index'])[
-        0]  # Class index of detected objects
-    scores = interpreter.get_tensor(output_details[2]['index'])[
-        0]  # Confidence of detected objects
-    # num = interpreter.get_tensor(output_details[3]['index'])[0]  # Total number of detected objects (inaccurate and not needed)
+    # Retrieve detection results    
+    boxes = interpreter.get_tensor(output_details[0]['index'])[0]  # Bounding box coordinates of detected objects
+    classes = interpreter.get_tensor(output_details[1]['index'])[0]  # Class index of detected objects
+    scores = interpreter.get_tensor(output_details[2]['index'])[0]  # Confidence of detected objects
 
-    #confidence_max_index = max(range(len(scores)), key=scores.__getitem__)
-    # print(confidence_max_index)
-    # Loop over all detections and draw detection box if confidence is above minimum threshold
     max_conf = 0
     human_detected = False
     for i in range(len(scores)):
         if (not int(classes[i]) == 0):
             # not a person
             scores
-        if ((scores[i] > min_conf_threshold) and (scores[i] <= 1.0) and (int(classes[i]) == 0)):
-            #print(f"Human detected! id={i}")
+        if ((scores[i] > min_conf_threshold) and (scores[i] <= 1.0) and (int(classes[i]) == 0) and (scores[i] > max_conf)):
             human_detected = True
-            if (scores[i] > max_conf):
-                max_conf = scores[i]
-                max_id = i
-                #print(f"max confidence updated! id={max_id}")
-    #print(f"final max id is: {max_id}")
+            max_conf = scores[i]
+            max_id = i
 
     if(human_detected):
         # Get bounding box coordinates and draw box
@@ -177,36 +144,31 @@ while True:
         xcenter = (xmin+xmax)/2
         ycenter = (ymin+ymax)/2
 
-        if (xcenter > 700):
+        if (xcenter > (imW / 2 + 20)):
             print("turning right...")
-            #robot.rover.right()
-            time.sleep(0.1)
-            #robot.rover.stop()
-        elif (xcenter < 660):
+            # robot.rover.right()
+
+        elif (xcenter < imW / 2 - 20):
             print("turning left...")
-            #robot.rover.left()
-            time.sleep(0.1)
-            #robot.rover.stop()
+            # robot.rover.left()
+
         else:
             print("not turning")
-            #robot.rover.stop()
+            # robot.rover.stop()
 
-        if (ycenter > 404):
+        if (ycenter > (imH / 2 + 20)):
             print("moving forward")
-            #robot.rover.forward()
-            time.sleep(0.1)
-            #robot.rover.stop()
-        elif (ycenter < 364):
+            # robot.rover.forward()
+
+        elif (ycenter < (imH / 2 - 20)):
             print("moving backward")
-            #robot.rover.backward()
-            time.sleep(0.1)
-            #robot.rover.stop()
+            # robot.rover.backward()
+
         else:
             print("not moving")
-            #robot.rover.stop()
-            
+            # robot.rover.stop()
+
         cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
-        #cv2.circle(frame, (xcenter, ycenter), 0, (0,0,255), -1)
 
         # Draw label
         # Look up object name from "labels" array using class index
@@ -224,15 +186,16 @@ while True:
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)  # Draw label text
 
     # Draw framerate in corner of frame
-    #cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(30,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
+    cv2.putText(frame, 'FPS: {0:.2f}'.format(frame_rate_calc), (30, 50),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2, cv2.LINE_AA)
 
     # All the results have been drawn on the frame, so it's time to display it.
     cv2.imshow('Object detector', frame)
 
     # Calculate framerate
-    #t2 = cv2.getTickCount()
-    #time1 = (t2-t1)/freq
-    #frame_rate_calc= 1/time1
+    t2 = cv2.getTickCount()
+    time1 = (t2-t1)/freq
+    frame_rate_calc = 1/time1
 
     # Press 'q' to quit
     if cv2.waitKey(1) == ord('q'):
