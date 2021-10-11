@@ -1,16 +1,9 @@
 # Import packages
 from tflite_runtime.interpreter import Interpreter
-import time
 from threading import Thread
-
 import cv2
 import numpy as np
-
-# try:
-#    import robot
-# except ImportError:
-#    print("robot function not found!")
-#    exit()
+# import robot
 
 
 class VideoStream:
@@ -93,7 +86,7 @@ freq = cv2.getTickFrequency()
 
 # Initialize video stream
 videostream = VideoStream(resolution=(imW, imH), framerate=30).start()
-#time.sleep(1)
+# time.sleep(1)
 
 # for frame1 in camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):
 while True:
@@ -118,10 +111,13 @@ while True:
     interpreter.set_tensor(input_details[0]['index'], input_data)
     interpreter.invoke()
 
-    # Retrieve detection results    
-    boxes = interpreter.get_tensor(output_details[0]['index'])[0]  # Bounding box coordinates of detected objects
-    classes = interpreter.get_tensor(output_details[1]['index'])[0]  # Class index of detected objects
-    scores = interpreter.get_tensor(output_details[2]['index'])[0]  # Confidence of detected objects
+    # Retrieve detection results
+    # Bounding box coordinates of detected objects
+    boxes = interpreter.get_tensor(output_details[0]['index'])[0]
+    classes = interpreter.get_tensor(output_details[1]['index'])[
+        0]  # Class index of detected objects
+    scores = interpreter.get_tensor(output_details[2]['index'])[
+        0]  # Confidence of detected objects
 
     max_conf = 0
     human_detected = False
