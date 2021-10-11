@@ -93,7 +93,7 @@ freq = cv2.getTickFrequency()
 
 # Initialize video stream
 videostream = VideoStream(resolution=(imW, imH), framerate=30).start()
-time.sleep(1)
+#time.sleep(1)
 
 # for frame1 in camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):
 while True:
@@ -148,7 +148,7 @@ while True:
             print("turning right...")
             # robot.rover.right()
 
-        elif (xcenter < imW / 2 - 20):
+        elif (xcenter < (imW / 2 - 20)):
             print("turning left...")
             # robot.rover.left()
 
