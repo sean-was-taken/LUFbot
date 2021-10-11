@@ -1,7 +1,7 @@
 # About
-* This is the software section of the [LUFbot](../)
+* This is the software section of the [LUFbot](https://github.com/sean-was-taken/LUFbot)
 # Usage
-* Once you have assembled the LUFbot according to the [Hardware Section](../hardware/README.md), clone this repository and run with `$ python3 ./detection.py`
+* Once you have assembled the LUFbot according to the [Hardware Section](../hardware/), clone this repository and run with `$ python3 ./detection.py`
 * If you find the tracking to be inaccurate, try tweaking the `min_conf_threshold` value and the `(ymax-ymin) * (xmax-xmin) < (1360*768/3) - 50000` lines. 
 
 # Credits
