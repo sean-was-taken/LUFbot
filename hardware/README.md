@@ -1,5 +1,5 @@
 # About
-* This is the hardware section of the [LUFbot](../)
+* This is the hardware section of the [LUFbot](https://www.github.com/sean-was-taken/LUFbot/)
 # Parts you will need
 * Raspberry Pi 4
 * micro sd card
