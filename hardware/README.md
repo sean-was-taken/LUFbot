@@ -11,7 +11,7 @@
 * HC-SR04 ultrasonic distance sensor
 * breadboard
 * jumper wires
-* [Schematics](./Schematics.png)
+* [Schematic](./Schematic.png)
 
 
 # Credits
