@@ -156,11 +156,11 @@ while True:
             print("not turning")
             # robot.rover.stop()
 
-        if (ycenter > (imH / 2 + 20)):
+        if ((ymax-ymin) * (xmax-xmin) < (1360*768/3) - 50000):
             print("moving forward")
             # robot.rover.forward()
 
-        elif (ycenter < (imH / 2 - 20)):
+        elif ((ymax-ymin) * (xmax-xmin) > (1360*768/3) + 50000):
             print("moving backward")
             # robot.rover.backward()
 
