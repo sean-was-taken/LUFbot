@@ -1,9 +1,10 @@
 # Import packages
+from gpiozero.input_devices import DistanceSensor
 from tflite_runtime.interpreter import Interpreter
 from threading import Thread
 import cv2
 import numpy as np
-# import robot
+import robot
 
 
 class VideoStream:
@@ -88,9 +89,11 @@ freq = cv2.getTickFrequency()
 videostream = VideoStream(resolution=(imW, imH), framerate=30).start()
 # time.sleep(1)
 
-# for frame1 in camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):
-while True:
+fall_protect_distance = robot.sensor_test()
 
+while True:
+    if(robot.sensor.distance > fall_protect_distance):
+        robot.fall()
     # Start timer (for calculating frame rate)
     t1 = cv2.getTickCount()
 
@@ -130,7 +133,9 @@ while True:
             max_conf = scores[i]
             max_id = i
 
-    if(human_detected):
+    if(not human_detected):
+        robot.rover.stop()
+    else:
         # Get bounding box coordinates and draw box
         # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
         ymin = int(max(1, (boxes[max_id][0] * imH)))
@@ -140,32 +145,8 @@ while True:
         xcenter = (xmin+xmax)/2
         ycenter = (ymin+ymax)/2
 
-        if (xcenter > (imW / 2 + 20)):
-            print("turning right...")
-            # robot.rover.right()
-
-        elif (xcenter < (imW / 2 - 20)):
-            print("turning left...")
-            # robot.rover.left()
-
-        else:
-            print("not turning")
-            # robot.rover.stop()
-
-        if ((ymax-ymin) * (xmax-xmin) < (1360*768/3) - 50000):
-            print("moving forward")
-            # robot.rover.forward()
-
-        elif ((ymax-ymin) * (xmax-xmin) > (1360*768/3) + 50000):
-            print("moving backward")
-            # robot.rover.backward()
-
-        else:
-            print("not moving")
-            # robot.rover.stop()
-
+        #---------- Draw Boxes (optional) ----------#
         cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
-
         # Draw label
         # Look up object name from "labels" array using class index
         object_name = labels[int(classes[max_id])]
@@ -180,18 +161,48 @@ while True:
                       labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED)
         cv2.putText(frame, label, (xmin, label_ymin-7),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)  # Draw label text
+    
+        # Draw framerate in corner of frame
+        cv2.putText(frame, 'FPS: {0:.2f}'.format(frame_rate_calc), (30, 50),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2, cv2.LINE_AA)
+    
+        # All the results have been drawn on the frame, so it's time to display it.
+        cv2.imshow('Object detector', frame)
+    
+        # Calculate framerate
+        t2 = cv2.getTickCount()
+        time1 = (t2-t1)/freq
+        frame_rate_calc = 1/time1
 
-    # Draw framerate in corner of frame
-    cv2.putText(frame, 'FPS: {0:.2f}'.format(frame_rate_calc), (30, 50),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2, cv2.LINE_AA)
+        #---------- Move Robot ----------#
+        if (xcenter > (imW / 2 + 20)):
+            print("turning right...")
+            robot.rover.right()
+            continue
 
-    # All the results have been drawn on the frame, so it's time to display it.
-    cv2.imshow('Object detector', frame)
+        elif (xcenter < (imW / 2 - 20)):
+            print("turning left...")
+            robot.rover.left()
+            continue
 
-    # Calculate framerate
-    t2 = cv2.getTickCount()
-    time1 = (t2-t1)/freq
-    frame_rate_calc = 1/time1
+        else:
+            print("not turning")
+            robot.rover.stop()
+
+        if ((ymax-ymin) * (xmax-xmin) < (1360*768/3) - 50000):
+            print("moving forward")
+            robot.rover.forward()
+            continue
+
+        elif ((ymax-ymin) * (xmax-xmin) > (1360*768/3) + 50000):
+            print("moving backward")
+            robot.rover.backward()
+            continue
+
+        else:
+            print("not moving")
+            robot.rover.stop()
+
 
     # Press 'q' to quit
     if cv2.waitKey(1) == ord('q'):
