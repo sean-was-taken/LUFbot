@@ -1,11 +1,11 @@
 # Import packages
-from gpiozero.input_devices import DistanceSensor
 from tflite_runtime.interpreter import Interpreter
 from threading import Thread
 import cv2
 import numpy as np
-import robot
+import gpiozero
 
+rover = gpiozero.Robot(left=(19, 26), right=(16, 20))
 
 class VideoStream:
     # Camera object that controls video streaming from the Picamera
@@ -92,8 +92,6 @@ videostream = VideoStream(resolution=(imW, imH), framerate=30).start()
 fall_protect_distance = robot.sensor_test()
 
 while True:
-    if(robot.sensor.distance > fall_protect_distance):
-        robot.fall()
     # Start timer (for calculating frame rate)
     t1 = cv2.getTickCount()
 
@@ -125,9 +123,6 @@ while True:
     max_conf = 0
     human_detected = False
     for i in range(len(scores)):
-        if (not int(classes[i]) == 0):
-            # not a person
-            scores
         if ((scores[i] > min_conf_threshold) and (scores[i] <= 1.0) and (int(classes[i]) == 0) and (scores[i] > max_conf)):
             human_detected = True
             max_conf = scores[i]
@@ -135,6 +130,8 @@ while True:
 
     if(not human_detected):
         robot.rover.stop()
+        cv2.imshow('Object detector', frame)
+        
     else:
         # Get bounding box coordinates and draw box
         # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
@@ -177,31 +174,31 @@ while True:
         #---------- Move Robot ----------#
         if (xcenter > (imW / 2 + 20)):
             print("turning right...")
-            robot.rover.right()
+            rover.right()
             continue
 
         elif (xcenter < (imW / 2 - 20)):
             print("turning left...")
-            robot.rover.left()
+            rover.left()
             continue
 
         else:
             print("not turning")
-            robot.rover.stop()
+            rover.stop()
 
         if ((ymax-ymin) * (xmax-xmin) < (1360*768/3) - 50000):
             print("moving forward")
-            robot.rover.forward()
+            rover.forward()
             continue
 
         elif ((ymax-ymin) * (xmax-xmin) > (1360*768/3) + 50000):
             print("moving backward")
-            robot.rover.backward()
+            rover.backward()
             continue
 
         else:
             print("not moving")
-            robot.rover.stop()
+            rover.stop()
 
 
     # Press 'q' to quit
