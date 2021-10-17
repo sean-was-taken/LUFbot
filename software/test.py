@@ -1,7 +1,3 @@
-if __name__ == "__main__":
-    print("This script must be imported")
-    exit()
-
 #import libraries
 import gpiozero
 import time
