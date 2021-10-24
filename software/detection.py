@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import gpiozero
 
-rover = gpiozero.Robot(left=(19, 26), right=(16, 20))
+#rover = gpiozero.Robot(left=(19, 26), right=(16, 20))
 
 class VideoStream:
     # Camera object that controls video streaming from the Picamera
@@ -56,7 +56,7 @@ min_conf_threshold = 0.5
 imW, imH = 1360, 768
 
 # Load the label map
-with open("./labelmap.txt", 'r') as f:
+with open("labelmap.txt", 'r') as f:
     labels = [line.strip() for line in f.readlines()]
 
 # Have to do a weird fix for label map if using the COCO "starter model" from
@@ -66,7 +66,7 @@ if labels[0] == '???':
     del(labels[0])
 
 # Load the Tensorflow Lite model.
-interpreter = Interpreter(model_path="./detect.tflite")
+interpreter = Interpreter(model_path="detect.tflite")
 
 interpreter.allocate_tensors()
 
@@ -88,10 +88,12 @@ freq = cv2.getTickFrequency()
 # Initialize video stream
 videostream = VideoStream(resolution=(imW, imH), framerate=30).start()
 # time.sleep(1)
-
-fall_protect_distance = robot.sensor_test()
+turn = ""
+move = ""
 
 while True:
+
+    print(f"turning: {turn}, moving: {move}          ", end="\r")
     # Start timer (for calculating frame rate)
     t1 = cv2.getTickCount()
 
@@ -129,8 +131,10 @@ while True:
             max_id = i
 
     if(not human_detected):
-        robot.rover.stop()
-        cv2.imshow('Object detector', frame)
+        #rover.stop()
+        turn = "not detected"
+        move = "not detected"
+        #cv2.imshow('Object detector', frame)
         
     else:
         # Get bounding box coordinates and draw box
@@ -142,6 +146,7 @@ while True:
         xcenter = (xmin+xmax)/2
         ycenter = (ymin+ymax)/2
 
+        """
         #---------- Draw Boxes (optional) ----------#
         cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
         # Draw label
@@ -170,41 +175,44 @@ while True:
         t2 = cv2.getTickCount()
         time1 = (t2-t1)/freq
         frame_rate_calc = 1/time1
-
+        """
         #---------- Move Robot ----------#
-        if (xcenter > (imW / 2 + 20)):
-            print("turning right...")
-            rover.right()
+        if (xcenter > (imW / 2 + 100)):
+            turn = "right"
+            move = "override"
+            #rover.right()
             continue
 
-        elif (xcenter < (imW / 2 - 20)):
-            print("turning left...")
-            rover.left()
+        elif (xcenter < (imW / 2 - 100)):
+            turn = "left"
+            move = "override"
+            #rover.left()
             continue
 
         else:
-            print("not turning")
-            rover.stop()
+            turn = "none"
+            #rover.stop()
 
         if ((ymax-ymin) * (xmax-xmin) < (1360*768/3) - 50000):
-            print("moving forward")
-            rover.forward()
+            move = "forward"
+            #rover.forward()
             continue
 
         elif ((ymax-ymin) * (xmax-xmin) > (1360*768/3) + 50000):
-            print("moving backward")
-            rover.backward()
+            move = "backward"
+            #rover.backward()
             continue
 
         else:
-            print("not moving")
-            rover.stop()
+            move = "none"
+            #rover.stop()
 
 
     # Press 'q' to quit
-    if cv2.waitKey(1) == ord('q'):
-        break
+    #if cv2.waitKey(1) == ord('q'):
+    #
+    #     break
 
 # Clean up
-cv2.destroyAllWindows()
+#cv2.destroyAllWindows()
 videostream.stop()
