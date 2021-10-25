@@ -225,4 +225,5 @@ try:
 
 except KeyboardInterrupt:
     videostream.stop()
+    print(f"turning: exit, moving: exit          ", end="\r")
     print("\nExit.")
