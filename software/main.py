@@ -187,13 +187,13 @@ try:
             if (xcenter > (imW / 2 + 100)):
                 turn = "right"
                 move = "override"
-                rover.right()
+                rover.right(0.6)
                 continue
 
             elif (xcenter < (imW / 2 - 100)):
                 turn = "left"
                 move = "override"
-                rover.left()
+                rover.left(0.6)
                 continue
 
             else:
